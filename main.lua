@@ -1,22 +1,27 @@
---Camera variable
+--Camera variables
 local player = {}
-player.x, player.y = 0, -0.5
+player.x, player.y, player.z = 0, -0.5, 0
 local screenW, screenH, halfW, halfH, startH, startW = display.actualContentWidth, display.actualContentHeight, display.contentCenterX, display.contentCenterY, display.screenOriginY, display.screenOriginX
-local renderPort = display.newGroup()
 local viewDist = 75
 
 local fov = 60
 local focusPoint = (1/90)*fov
 fov = math.rad(fov)
 
+local renderPort = display.newGroup()
+
 --Map table
 local block = {}
-
 
 --Block generation tracking
 local currentHeight = 0
 local currentLength = 0
+local mapWidth = 5
+local mapHeight = 10
 
+for k = 1, (mapWidth*2) +1 do
+	block[k] =  {}
+end
 
 --palletes
 local pallete = 
@@ -112,11 +117,7 @@ fpsText = display.newText(" ", startW + 120, 80, native.systemFont, 36 )
 fpsText.anchorX = 0
 
 
-function distancec ( x1, y1, x2, y2 )
-	local dx = x1 - x2
-	local dy = y1 - y2
-	return math.sqrt ( dx * dx + dy * dy )
-end
+--functions
 
 
 --Draw polygon at screen defined coordinates
@@ -142,200 +143,192 @@ function absPolygon(displayGroup ,vertices)
 end
 
 
---Draw to screen
-function draw(displayGroup, c1, c2, lane)
-	local minValue = (-fov*0.5)
-	local maxValue = (fov*0.5)
-	
-	local size = 1
-	
-	local y1, y2, x1, x2
-	
-	local distance = math.max(focusPoint, c2.x - c1.x)
-	
-	local distance2 = math.max(focusPoint, c2.x + size - c1.x)
-	
-	--render top
-	if c2.y >= c1.y then
-		y1 = screenH * ( (math.atan2(c2.y - c1.y, distance)  - minValue)/(maxValue-minValue) )
-		y2 = screenH * ( (math.atan2(c2.y - c1.y, distance2)  - minValue)/(maxValue-minValue) )
-	else
-	--render bottom
-		y1 = screenH * ( (math.atan2(c2.y +size - c1.y, distance)  - minValue)/(maxValue-minValue) )
-		y2 = screenH * ( (math.atan2(c2.y +size - c1.y, distance2)  - minValue)/(maxValue-minValue) )
-	end
-	
-	if (y2 > 0 and y2 < screenH) then
+function render(displayGroup, map)
 
-		--y1 = math.max(0, math.min(y1, screenH))
+	local height = 1
+	local length = 1
 	
+	local pZ = player.z%1 < 0.5 and math.floor(player.z) or math.ceil(player.z)
+	pZ = math.min( (mapWidth*2)+1, math.max( 1, pZ + mapWidth+1 ) )
+	
+	local c1 = {x = player.x - focusPoint, y = player.y, z = player.z}
+	
+	--Draw to screen
+	local function draw(displayGroup, object)
+		local c2 =  object
 
-		
-
-		
-		local scale1 = screenH*size / distance
-		local scale2 = screenH*size / distance2
-		
-		local fade = math.max(1,distance/(viewDist*0.1))
-		
-		local c = c2.c		
-		
-		local pallete = pallete[c2.p]
+		local distance2 = (c2.x + length - c1.x)
 			
-		local colour1 = {r = pallete[c].r/fade, g = pallete[c].g/fade, b = pallete[c].b/fade}
-		
-		local colour2 = {r = (pallete[c].r*0.75)/fade, g = (pallete[c].g*0.75)/fade, b = (pallete[c].b*0.75)/fade}
-		
-		local colour3 = {r = (pallete[c].r*0.5)/fade, g = (pallete[c].g*0.5)/fade, b = (pallete[c].b*0.5)/fade}
+		if distance2 > 0 then
+			local minValue = (-fov*0.5)
+			local maxValue = (fov*0.5)
+				
+			local y1, y2, x1, x2
+			
+			local distance = math.max(focusPoint, c2.x - c1.x)
+			
+			--render top
+			if c2.y >= c1.y then
+				y1 = screenH * ( (math.atan2(c2.y - c1.y, distance)  - minValue)/(maxValue-minValue) )
+				y2 = screenH * ( (math.atan2(c2.y - c1.y, distance2)  - minValue)/(maxValue-minValue) )	
+			else
+			--render bottom
+				y1 = screenH * ( (math.atan2(c2.y +height - c1.y, distance)  - minValue)/(maxValue-minValue) )
+				y2 = screenH * ( (math.atan2(c2.y +height - c1.y, distance2)  - minValue)/(maxValue-minValue) )
+			end
 		
 
-		
-		--middle lane
-		if lane == 2 then
-			x1 = halfW
-			x2 = halfW
-		elseif lane == 1 then
-			x1 = halfW - 2*scale1
-			x2 = halfW - 2*scale2
-		elseif lane == 3 then
-			x1 = halfW + 2*scale1
-			x2 = halfW + 2*scale2
-		end
-		
-		local vertices = {{},{},{},{},{},{},{}}
-		
-		--top/bottom
-		vertices[2].x = x1 - scale1*0.5
-		vertices[2].y = y1		
-		vertices[3].x = x1 + scale1*0.5
-		vertices[3].y = y1
-									
-								
-		vertices[1].x = x2 - scale2*0.5
-		vertices[1].y = y2
-		vertices[4].x = x2 + scale2*0.5
-		vertices[4].y = y2	
-		
-		local a = absPolygon(displayGroup,{vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y, vertices[3].x, vertices[3].y, vertices[4].x, vertices[4].y})
-		
-		local b
-		
-		--create polygons
+			
+			--Colour calculatio
+			local fade = math.max(1,distance/(viewDist*0.1))
+			local c = c2.c			
+			local pallete = pallete[c2.p]	
+			
+			local colour1 = {r = pallete[c].r/fade, g = pallete[c].g/fade, b = pallete[c].b/fade}	
+			local colour2 = {r = (pallete[c].r*0.75)/fade, g = (pallete[c].g*0.75)/fade, b = (pallete[c].b*0.75)/fade}	
+			local colour3 = {r = (pallete[c].r*0.5)/fade, g = (pallete[c].g*0.5)/fade, b = (pallete[c].b*0.5)/fade}
+				
+				
+			--scaling values for polygons	
+			local diffZ = c2.z - c1.z
+			
+			local scale1 = screenH*height / distance
+			local scale2 = screenH*height / distance2
+				
+			x1 = halfW + diffZ*scale1
+			x2 = halfW + diffZ*scale2
+			
+			--calculate vertices
+			local vertices = {{},{},{},{},{},{},{}}
+			
+			vertices[2].x = x1 - scale1*0.5
+			vertices[2].y = y1		
+			vertices[3].x = x1 + scale1*0.5
+			vertices[3].y = y1
+															
+			vertices[1].x = x2 - scale2*0.5
+			vertices[1].y = y2
+			vertices[4].x = x2 + scale2*0.5
+			vertices[4].y = y2	
+			
+			--top/bottom polygon
+			local a = absPolygon(displayGroup,{vertices[1].x, vertices[1].y, vertices[2].x, vertices[2].y, vertices[3].x, vertices[3].y, vertices[4].x, vertices[4].y})	
+			
+			--forward reference to front/side polygon
+			local b
+			
+			--draw front/side polygon if showing top side
 			if c2.y >= c1.y then
 				vertices[5].x = vertices[2].x
 				vertices[5].y = vertices[2].y + scale1
 				vertices[6].x = vertices[3].x 
 				vertices[6].y = vertices[3].y + scale1
-				
-				if lane == 1 then
+					
+				if diffZ < -0.55 then  --left
 					vertices[7].x = vertices[4].x
 					vertices[7].y = vertices[4].y + scale2
 					b = absPolygon(displayGroup,{vertices[2].x, vertices[2].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y,
 					vertices[7].x, vertices[7].y, vertices[4].x, vertices[4].y, vertices[3].x, vertices[3].y})
-				elseif lane == 3 then
+				elseif diffZ > 0.55 then --right
 					vertices[7].x = vertices[1].x
 					vertices[7].y = vertices[1].y + scale2
 					b = absPolygon(displayGroup,{vertices[1].x, vertices[1].y, vertices[7].x, vertices[7].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y,
 					vertices[3].x, vertices[3].y, vertices[2].x, vertices[2].y})
-				else
+				else --middle
 					b = absPolygon(displayGroup,{vertices[2].x, vertices[2].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y, vertices[3].x, vertices[3].y})
 				end
 				a:setFillColor(colour1.r, colour1.g, colour1.b)
 				b:setFillColor(colour2.r, colour2.g, colour2.b)
+				
+			--draw front/side polygon if showing bottom side
 			else
 				vertices[5].x = vertices[2].x
 				vertices[5].y = vertices[2].y - scale1
 				vertices[6].x = vertices[3].x 
 				vertices[6].y = vertices[3].y - scale1
-				
-				if lane == 1 then
+					
+				if diffZ < -0.55 then --left
 					vertices[7].x = vertices[4].x
 					vertices[7].y = vertices[4].y - scale2
 					b = absPolygon(displayGroup,{vertices[2].x, vertices[2].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y,
 					vertices[7].x, vertices[7].y, vertices[4].x, vertices[4].y, vertices[3].x, vertices[3].y})
-				
-				elseif lane == 3 then
+					
+				elseif diffZ > 0.55 then --right
 					vertices[7].x = vertices[1].x
 					vertices[7].y = vertices[1].y - scale2
 					b = absPolygon(displayGroup,{vertices[1].x, vertices[1].y, vertices[7].x, vertices[7].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y,
 					vertices[3].x, vertices[3].y, vertices[2].x, vertices[2].y})
-				else
+				else --middle
 					b = absPolygon(displayGroup,{vertices[2].x, vertices[2].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y, vertices[3].x, vertices[3].y})
 				end
 				b:setFillColor(colour2.r, colour2.g, colour2.b)
 				a:setFillColor(colour3.r, colour3.g, colour3.b)
-			end
-		end					
-end
-
-
-
-function render(object)
-
-	local fp = {x = player.x-focusPoint,y = player.y}
-	
-	renderPort:removeSelf()
-	
-	renderPort = display.newGroup()
-	
-	for k = #object, 1, -1 do				
-			
-		draw( renderPort, fp, object[k], 1)
-		draw( renderPort, fp, object[k], 3)
-		draw( renderPort, fp, object[k], 2)
-			
+			end			
+		end
 	end
-end
-
-
-
 
 	
-	
-local function generateMap(length ,range)
-	local mapCounter = 1
-	
-	local mapTable = {}
-	for i = 1,length do	
-			local newBlock = {
-								x = currentLength, y = currentHeight, 
-								c = math.random(1,5), p = currentPallete 
-							}
-							
-			mapTable[mapCounter] = newBlock
-
-			currentHeight = math.min( 5 ,math.max( -5, currentHeight + math.random(-range, range) ) )
-			if currentHeight == -1 then 
-				currentHeight = 0
-			end
-				
-			mapCounter = mapCounter + 1
-		currentLength = currentLength + 1
-	end
-	return mapTable
-end
-	
-
-function update()
-	--print("update")
-
-	player.x = player.x +5*time.frame
-	
-	for k = #block, 1, -1 do
-		if player.x > block[k].x+1 then			
-			table.remove(block, k)
-			
-			local temp = generateMap(1, 2)
-			block[#block+1] = temp[1]
+	--iterate from left to one lane left of the player
+	for z = 1, pZ-1 do
+		for k = #map[z], 1, -1 do	
+			draw(displayGroup, map[z][k])		
 		end
 	end
 	
+	--iterate from right to the player
+	for z = (mapWidth*2)+1, pZ, -1 do
+		for k = #map[z], 1, -1 do	
+			draw(displayGroup, map[z][k])		
+		end
+	end
+	
+end
+	
+	
+local function generateMap(range, z)
+	local newBlock 
+	
+	newBlock = {
+					x = currentLength, y = currentHeight, z = z,
+					c = math.random(1,5), p = currentPallete 
+				}
+							
+	currentHeight = math.min( mapHeight*0.5 ,math.max( -mapHeight*0.5, currentHeight + math.random(-range, range) ) )
+	if currentHeight == -1 then 
+		currentHeight = 0
+	end
+				
+	return newBlock
+end
+	
 
-	render(block)
+local zSpeed = 5
+function update()
+	player.x = player.x +10*time.frame
+	
+	player.z = player.z + zSpeed*time.frame
+	
+	if player.z > (mapWidth) and zSpeed > 0 then
+		zSpeed = -zSpeed
+	elseif player.z < -mapWidth and zSpeed < 0 then
+		zSpeed = -zSpeed
+	end
+	
+	for z = 1, #block do
+		currentLength = block[z][#block[z]].x+1
+		for k = 1, #block[z] do
+			if player.x > block[z][k].x+4 then
+				table.remove(block[z],k)
+				block[z][#block[z]+1] = generateMap(mapHeight,z -mapWidth -1)
+			end
+		end
+	end
+	
+	renderPort:removeSelf()
+	renderPort = display.newGroup()
+	render(renderPort, block)
 
-	
-	
-	
+
 	--Calculate frame times
 	time.old = time.current
 	time.current = system.getTimer()
@@ -343,7 +336,13 @@ function update()
 	fpsText.text = "fps "..math.floor(1/time.frame)
 end
 
-block = generateMap(viewDist,2)
+for k = 1,viewDist do
+	for z = 1, (mapWidth*2)+1 do
+		block[z][#block[z]+1] = generateMap(2,z-mapWidth-1)
+	end
+	currentLength = currentLength + 1
+end
+	
 Runtime:addEventListener("enterFrame", update)
 palleteTimer = timer.performWithDelay(5000, function() currentPallete = (currentPallete%#pallete)+1 end, 0)
 
