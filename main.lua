@@ -1,6 +1,6 @@
 --Camera variable
 local player = {}
-player.x, player.y = 0, -0.7
+player.x, player.y = 0, -0.5
 local fov = math.rad(60)
 local screenW, screenH, halfW, halfH, startH, startW = display.actualContentWidth, display.actualContentHeight, display.contentCenterX, display.contentCenterY, display.screenOriginY, display.screenOriginX
 local renderPort = display.newGroup()
@@ -293,6 +293,9 @@ local function generateMap(length ,range)
 			mapTable[mapCounter] = newBlock
 
 			currentHeight = math.min( 5 ,math.max( -5, currentHeight + math.random(-range, range) ) )
+			if currentHeight == -1 then 
+				currentHeight = 0
+			end
 				
 			mapCounter = mapCounter + 1
 		currentLength = currentLength + 1
