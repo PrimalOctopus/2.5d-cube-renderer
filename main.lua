@@ -1,12 +1,13 @@
 --Camera variable
 local player = {}
 player.x, player.y = 0, -0.5
-local fov = math.rad(60)
 local screenW, screenH, halfW, halfH, startH, startW = display.actualContentWidth, display.actualContentHeight, display.contentCenterX, display.contentCenterY, display.screenOriginY, display.screenOriginX
 local renderPort = display.newGroup()
 local viewDist = 75
 
+local fov = 60
 local focusPoint = (1/90)*fov
+fov = math.rad(fov)
 
 --Map table
 local block = {}
@@ -150,9 +151,9 @@ function draw(displayGroup, c1, c2, lane)
 	
 	local y1, y2, x1, x2
 	
-	local distance = math.max(0.666, c2.x - c1.x)
+	local distance = math.max(focusPoint, c2.x - c1.x)
 	
-	local distance2 = math.max(c2.x + size - c1.x)
+	local distance2 = math.max(focusPoint, c2.x + size - c1.x)
 	
 	--render top
 	if c2.y >= c1.y then
