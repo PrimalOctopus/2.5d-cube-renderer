@@ -4,7 +4,7 @@ player.x, player.y = 0, -0.5
 local fov = math.rad(60)
 local screenW, screenH, halfW, halfH, startH, startW = display.actualContentWidth, display.actualContentHeight, display.contentCenterX, display.contentCenterY, display.screenOriginY, display.screenOriginX
 local renderPort = display.newGroup()
-
+local viewDist = 75
 
 --Map table
 local block = {}
@@ -160,7 +160,7 @@ function draw(displayGroup, c1, c2, lane)
 		local scale1 = screenH*size / distance
 		local scale2 = screenH*size / (distance+size)
 		
-		local fade = math.max(1,distance/(50))
+		local fade = math.max(1,distance/(viewDist*0.1))
 		
 		local c = c2.c		
 		
@@ -225,7 +225,6 @@ function draw(displayGroup, c1, c2, lane)
 					b = absPolygon(displayGroup,{vertices[2].x, vertices[2].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y, vertices[3].x, vertices[3].y})
 				end
 				a:setFillColor(colour1.r, colour1.g, colour1.b)
-				
 				b:setFillColor(colour2.r, colour2.g, colour2.b)
 			else
 				vertices[5].x = vertices[2].x
@@ -247,13 +246,10 @@ function draw(displayGroup, c1, c2, lane)
 				else
 					b = absPolygon(displayGroup,{vertices[2].x, vertices[2].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y, vertices[3].x, vertices[3].y})
 				end
-
+				b:setFillColor(colour2.r, colour2.g, colour2.b)
+				a:setFillColor(colour3.r, colour3.g, colour3.b)
 			end
-			b:setFillColor(colour2.r, colour2.g, colour2.b)
-			a:setFillColor(colour3.r, colour3.g, colour3.b)
-		end
-
-					
+		end					
 end
 
 
@@ -331,7 +327,7 @@ function update()
 	fpsText.text = "fps "..math.floor(1/time.frame)
 end
 
-block = generateMap(50,2)
+block = generateMap(viewDist,2)
 Runtime:addEventListener("enterFrame", update)
 palleteTimer = timer.performWithDelay(5000, function() currentPallete = (currentPallete%#pallete)+1 end, 0)
 
