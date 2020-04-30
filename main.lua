@@ -166,7 +166,7 @@ function draw(displayGroup, c1, c2, lane)
 		
 		local pallete = pallete[c2.p]
 			
-		local colour = {r = pallete[c].r/fade, g = pallete[c].g/fade, b = pallete[c].b/fade}
+		local colour1 = {r = pallete[c].r/fade, g = pallete[c].g/fade, b = pallete[c].b/fade}
 		
 		local colour2 = {r = (pallete[c].r*0.75)/fade, g = (pallete[c].g*0.75)/fade, b = (pallete[c].b*0.75)/fade}
 		
@@ -224,9 +224,9 @@ function draw(displayGroup, c1, c2, lane)
 				else
 					b = absPolygon(displayGroup,{vertices[2].x, vertices[2].y, vertices[5].x, vertices[5].y, vertices[6].x, vertices[6].y, vertices[3].x, vertices[3].y})
 				end
-				a:setFillColor(colour.r, colour.g, colour.b)
+				a:setFillColor(colour1.r, colour1.g, colour1.b)
 				
-				b:setFillColor(colour.r*0.5, colour.g*0.5, colour.b*0.5)
+				b:setFillColor(colour2.r, colour2.g, colour2.b)
 			else
 				vertices[5].x = vertices[2].x
 				vertices[5].y = vertices[2].y - scale1
@@ -249,8 +249,8 @@ function draw(displayGroup, c1, c2, lane)
 				end
 
 			end
-			b:setFillColor(colour.r*0.5, colour.g*0.5, colour.b*0.5)
-			a:setFillColor(colour.r*0.25, colour.g*0.25, colour.b*0.25)
+			b:setFillColor(colour2.r, colour2.g, colour2.b)
+			a:setFillColor(colour3.r, colour3.g, colour3.b)
 		end
 
 					
