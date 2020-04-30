@@ -6,6 +6,8 @@ local screenW, screenH, halfW, halfH, startH, startW = display.actualContentWidt
 local renderPort = display.newGroup()
 local viewDist = 75
 
+local focusPoint = (1/90)*fov
+
 --Map table
 local block = {}
 
@@ -109,6 +111,13 @@ fpsText = display.newText(" ", startW + 120, 80, native.systemFont, 36 )
 fpsText.anchorX = 0
 
 
+function distancec ( x1, y1, x2, y2 )
+	local dx = x1 - x2
+	local dy = y1 - y2
+	return math.sqrt ( dx * dx + dy * dy )
+end
+
+
 --Draw polygon at screen defined coordinates
 function absPolygon(displayGroup ,vertices)
 	local max = {x = -9999, y = -9999}
@@ -141,24 +150,30 @@ function draw(displayGroup, c1, c2, lane)
 	
 	local y1, y2, x1, x2
 	
+	local distance = math.max(0.666, c2.x - c1.x)
+	
+	local distance2 = math.max(c2.x + size - c1.x)
+	
 	--render top
 	if c2.y >= c1.y then
-		y1 = screenH * ( (math.atan2(c2.y - c1.y, c2.x - c1.x)  - minValue)/(maxValue-minValue) )
-		y2 = screenH * ( (math.atan2(c2.y - c1.y, c2.x+size - c1.x)  - minValue)/(maxValue-minValue) )
+		y1 = screenH * ( (math.atan2(c2.y - c1.y, distance)  - minValue)/(maxValue-minValue) )
+		y2 = screenH * ( (math.atan2(c2.y - c1.y, distance2)  - minValue)/(maxValue-minValue) )
 	else
 	--render bottom
-		y1 = screenH * ( (math.atan2(c2.y +size - c1.y, c2.x - c1.x)  - minValue)/(maxValue-minValue) )
-		y2 = screenH * ( (math.atan2(c2.y +size - c1.y, c2.x+size - c1.x)  - minValue)/(maxValue-minValue) )
+		y1 = screenH * ( (math.atan2(c2.y +size - c1.y, distance)  - minValue)/(maxValue-minValue) )
+		y2 = screenH * ( (math.atan2(c2.y +size - c1.y, distance2)  - minValue)/(maxValue-minValue) )
 	end
 	
 	if (y2 > 0 and y2 < screenH) then
 
 		--y1 = math.max(0, math.min(y1, screenH))
 	
-		local distance = c2.x - c1.x
+
+		
+
 		
 		local scale1 = screenH*size / distance
-		local scale2 = screenH*size / (distance+size)
+		local scale2 = screenH*size / distance2
 		
 		local fade = math.max(1,distance/(viewDist*0.1))
 		
@@ -256,7 +271,7 @@ end
 
 function render(object)
 
-	local fp = player.x - 0.5
+	local fp = {x = player.x-focusPoint,y = player.y}
 	
 	renderPort:removeSelf()
 	
@@ -264,9 +279,9 @@ function render(object)
 	
 	for k = #object, 1, -1 do				
 			
-		draw( renderPort, player, object[k], 1)
-		draw( renderPort, player, object[k], 3)
-		draw( renderPort, player, object[k], 2)
+		draw( renderPort, fp, object[k], 1)
+		draw( renderPort, fp, object[k], 3)
+		draw( renderPort, fp, object[k], 2)
 			
 	end
 end
